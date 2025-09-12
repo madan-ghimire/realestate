@@ -1,0 +1,246 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum RoleType {
+  ADMINISTRATOR
+  AGENT
+  CLIENT
+  PROPERTY_OWNER
+  INSIGHT_USER
+}
+
+enum PropertyType {
+  HOUSE
+  APARTMENT
+  CONDO
+  LAND
+  COMMERCIAL
+}
+
+enum PropertyStatus {
+  AVAILABLE
+  PENDING
+  SOLD
+  RENTED
+}
+
+model Tenant {
+  id          String     @id @default(uuid())
+  name        String     @unique
+  description String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  users       User[]
+  properties  Property[]
+  listings    Listing[]
+  bookings    Booking[]
+  payments    Payment[]
+  documents   Document[]
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  BANNED
+  INVITED
+  LOCKED
+  UNLOCK_SENT
+}
+
+model User {
+  id          String   @id @default(uuid())
+  email       String   @unique
+  username    String   @unique
+  password    String
+  firstName   String
+  lastName    String
+  displayName String?
+  phone       String?
+  avatarUrl   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  role          RoleType   @default(CLIENT)
+  status        UserStatus @default(ACTIVE)
+  resetPassword Boolean    @default(false)
+  otpVerified   Boolean    @default(false)
+  loginAttempts Int        @default(0)
+  lock          Boolean    @default(false)
+  twoFA         Boolean    @default(false)
+  tenantId      String?
+  tenant        Tenant?    @relation(fields: [tenantId], references: [id])
+
+  token          String?   @db.VarChar(255)
+  tokenCreatedAt DateTime?
+
+  ownedProperties   Property[] @relation("OwnerProperties")
+  agentListings     Listing[]  @relation("AgentListings")
+  clientBookings    Booking[]  @relation("ClientBookings")
+  uploadedDocuments Document[]
+  payments          Payment[]
+}
+
+// ====================
+// Token Model
+// ====================
+
+model Token {
+  id         String   @id @default(uuid())
+  token      String
+  shortToken String
+  timestamp  DateTime @default(now())
+}
+
+// ====================
+// Real Estate Domain
+// ====================
+
+model Property {
+  id          String         @id @default(uuid())
+  title       String
+  description String?
+  type        PropertyType
+  status      PropertyStatus @default(AVAILABLE)
+  address     String
+  city        String
+  state       String
+  zipCode     String
+  country     String
+  price       Float
+  sizeSqFt    Float
+  bedrooms    Int
+  bathrooms   Int
+  yearBuilt   Int?
+  amenities   String[]
+  images      String[]
+  listedAt    DateTime?
+
+  // Relations
+  ownerId String
+  owner   User   @relation("OwnerProperties", fields: [ownerId], references: [id])
+
+  tenantId String?
+  tenant   Tenant? @relation(fields: [tenantId], references: [id])
+
+  listings  Listing[]
+  documents Document[]
+}
+
+// ====================
+// Listings & Bookings
+// ====================
+
+model Listing {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  price       Float
+  isActive    Boolean  @default(true)
+  listedAt    DateTime @default(now())
+
+  // Relations
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id])
+
+  agentId String
+  agent   User   @relation("AgentListings", fields: [agentId], references: [id])
+
+  tenantId String?
+  tenant   Tenant? @relation(fields: [tenantId], references: [id])
+
+  bookings Booking[]
+}
+
+model Booking {
+  id          String        @id @default(uuid())
+  scheduledAt DateTime
+  status      BookingStatus @default(PENDING)
+  notes       String?
+
+  // Relations
+  listingId String
+  listing   Listing @relation(fields: [listingId], references: [id])
+
+  clientId String
+  client   User   @relation("ClientBookings", fields: [clientId], references: [id])
+
+  tenantId String?
+  tenant   Tenant? @relation(fields: [tenantId], references: [id])
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+// ====================
+// Payments
+// ====================
+
+model Payment {
+  id          String        @id @default(uuid())
+  amount      Float
+  method      PaymentMethod
+  status      PaymentStatus @default(PENDING)
+  description String?
+  createdAt   DateTime      @default(now())
+
+  // Relations
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  tenantId String?
+  tenant   Tenant? @relation(fields: [tenantId], references: [id])
+}
+
+enum PaymentMethod {
+  CREDIT_CARD
+  BANK_TRANSFER
+  CASH
+  PAYPAL
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+// ====================
+// Documents & Files
+// ====================
+
+model Document {
+  id         String       @id @default(uuid())
+  title      String
+  type       DocumentType
+  fileUrl    String       @db.VarChar(512)
+  size       Int?
+  mimeType   String?      @db.VarChar(128)
+  uploadedAt DateTime     @default(now())
+
+  uploadedById String
+  uploadedBy   User   @relation(fields: [uploadedById], references: [id])
+
+  propertyId String?
+  property   Property? @relation(fields: [propertyId], references: [id])
+
+  tenantId String?
+  tenant   Tenant? @relation(fields: [tenantId], references: [id])
+}
+
+enum DocumentType {
+  DEED
+  CONTRACT
+  INSPECTION_REPORT
+  TAX
+  OTHER
+}
