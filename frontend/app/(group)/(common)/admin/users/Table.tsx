@@ -494,6 +494,8 @@ export function TableComponent({
       displayName: user.displayName || "",
       // phone: user.phone || "",
       createdAt: user.createdAt || "",
+      tenant: user.tenant ?? null,
+      tenantId: user.tenantId ?? null,
       // updatedAt: user.updatedAt || "",
       // tenantId: user.tenantId || null,
     };
@@ -519,7 +521,7 @@ export function TableComponent({
             <TableHead>Phone</TableHead>
             <TableHead>CreatedAt</TableHead>
             <TableHead>UpdatedAt</TableHead>
-            <TableHead>TenantId</TableHead>
+            <TableHead>Tenant</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Role</TableHead>
 
@@ -536,7 +538,7 @@ export function TableComponent({
                 <TableCell>{user.phone ?? "-"}</TableCell>
                 <TableCell>{user.createdAt}</TableCell>
                 <TableCell>{user.updatedAt}</TableCell>
-                <TableCell>{user.tenantId ?? "-"}</TableCell>
+                <TableCell>{user?.tenant?.name ?? "-"}</TableCell>
                 <TableCell>{user.status ?? "-"} </TableCell>
                 <TableCell>
                   <Badge variant={getRoleBadgeVariant(user.role)}>

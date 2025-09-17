@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 export default function TermsPage() {
   //   const searchParams = useSearchParams();
@@ -55,12 +56,12 @@ export default function TermsPage() {
             <li>
               Communications and documents within this system are protected.
               View our{" "}
-              <a
+              <Link
                 href="/privacy"
                 className="font-extrabold text-blue-600 underline hover:text-blue-700"
               >
                 Privacy Policy
-              </a>{" "}
+              </Link>{" "}
               for more details.
             </li>
           </ul>

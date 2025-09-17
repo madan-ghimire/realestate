@@ -32,6 +32,7 @@ import * as z from "zod";
 import { ROLE_OPTIONS } from "@/constants/constants";
 import { Eye, EyeOff } from "lucide-react";
 import { User } from "@/types/auth";
+import { Tenant } from "@/types/tenant";
 
 // Zod schema for editing a user
 const editUserSchema = z.object({
@@ -45,6 +46,7 @@ const editUserSchema = z.object({
     .min(6, "Password must be at least 6 characters")
     .optional()
     .or(z.literal("")),
+  tenantId: z.string().min(1, "Tenant is required"),
 });
 
 export type EditUserFormData = z.infer<typeof editUserSchema>;
@@ -53,12 +55,15 @@ interface ViewUserDialogProps {
   isOpen: boolean;
   onClose: () => void;
   user: User;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  tenantData: any;
 }
 
 export const ViewUserDialog: React.FC<ViewUserDialogProps> = ({
   isOpen,
   onClose,
   user,
+  tenantData,
 }) => {
   const [showPassword, setShowPassword] = useState(false);
 
@@ -71,6 +76,7 @@ export const ViewUserDialog: React.FC<ViewUserDialogProps> = ({
       username: "",
       role: "",
       password: "",
+      tenantId: "",
     },
   });
 
@@ -86,6 +92,7 @@ export const ViewUserDialog: React.FC<ViewUserDialogProps> = ({
         username: user.username || "",
         role: user.role || "",
         password: "",
+        tenantId: user.tenantId || "",
       });
     }
   }, [user, isOpen, form]);
@@ -100,10 +107,11 @@ export const ViewUserDialog: React.FC<ViewUserDialogProps> = ({
         username: "",
         role: "",
         password: "",
+        tenantId: user.tenantId || "", // ← make sure this is here
       });
       setShowPassword(false);
     }
-  }, [isOpen, form]);
+  }, [isOpen, form, user]);
 
   const onSubmit = () => {};
 
@@ -268,6 +276,36 @@ export const ViewUserDialog: React.FC<ViewUserDialogProps> = ({
                         )}
                       </button>
                     </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="tenantId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tenant</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value || "test"}
+                      disabled
+                      // disabled={tenantsLoading}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select a tenant" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {tenantData?.tenants?.map((tenant: Tenant) => (
+                          <SelectItem key={tenant.id} value={tenant.id}>
+                            {tenant.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}

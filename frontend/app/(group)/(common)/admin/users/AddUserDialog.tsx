@@ -33,6 +33,7 @@ import toast from "react-hot-toast";
 import { ROLE_OPTIONS } from "@/constants/constants";
 import { apiClient } from "@/utils/apiClient";
 import { Loader2, Eye, EyeOff } from "lucide-react";
+import { Tenant } from "@/types/tenant";
 // import AxiosInstance from "@/services/http.service";
 
 // Zod schema for adding a user
@@ -41,6 +42,9 @@ const addUserSchema = z.object({
   lastName: z.string().min(1, "Last name is required").trim(),
   email: z.string().email("Invalid email").trim().toLowerCase(),
   username: z.string().min(3, "Username must be at least 3 characters").trim(),
+  avatarUrl: z.string().min(1, "First name is required").optional(),
+  tenantId: z.string().min(1, "Tenant is required"),
+
   role: z.string().min(1, "Role is required"),
   password: z
     .string()
@@ -60,16 +64,20 @@ interface AddUserDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onUserCreated: () => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  tenantData: any;
 }
 
 export const AddUserDialog: React.FC<AddUserDialogProps> = ({
   isOpen,
   onClose,
-
+  tenantData,
   onUserCreated,
 }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  console.log("check tenant data", tenantData);
 
   const form = useForm<AddUserFormData>({
     resolver: zodResolver(addUserSchema),
@@ -80,6 +88,7 @@ export const AddUserDialog: React.FC<AddUserDialogProps> = ({
       username: "",
       role: "",
       password: "",
+      tenantId: "",
     },
   });
 
@@ -180,6 +189,62 @@ export const AddUserDialog: React.FC<AddUserDialogProps> = ({
                     <FormControl>
                       <Input placeholder="Username" {...field} />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="avatarUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Avatar</FormLabel>
+                    <FormControl>
+                      <Input type="file" placeholder="User avatar" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="tenantId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tenant</FormLabel>
+                    <div className="relative w-full">
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="w-full pr-8">
+                            <SelectValue placeholder="Select a tenant" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {tenantData?.tenants?.map((tenant: Tenant) => (
+                            <SelectItem key={tenant.id} value={tenant.id}>
+                              {tenant.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+
+                      {/* Clear button (X) inside the trigger */}
+                      {field.value && (
+                        <button
+                          type="button"
+                          onClick={() => field.onChange("")}
+                          className="absolute inset-y-0 right-2 flex items-center text-gray-500 hover:text-gray-700"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}

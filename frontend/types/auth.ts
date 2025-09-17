@@ -16,6 +16,8 @@ export interface SignInData {
 
 export interface User {
   id: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  tenant?: any;
   username: string;
   email: string;
   role: string;
@@ -23,6 +25,7 @@ export interface User {
   firstName?: string;
   lastName?: string;
   createdAt?: string | Date | null | undefined;
+  tenantId?: string | null;
 }
 
 export interface AuthResponse {
