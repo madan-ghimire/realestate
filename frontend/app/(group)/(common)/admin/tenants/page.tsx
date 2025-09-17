@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import React, { useRef, useState } from "react";
@@ -49,18 +48,13 @@ import { getToken } from "@/services/http.service";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BreadcrumbWithCustomSeparator } from "./BreadCrumbs";
 import { TableComponent } from "./Table";
-import { AddUserDialog } from "./AddUserDialog";
-import { EditUserDialog } from "./EditUserDialog";
-import { User } from "@/types/auth";
+import { AddTenantDialog } from "./AddTenantDialog";
+import { EditTenantDialog } from "./EditTenantDialog";
 import toast from "react-hot-toast";
 import { ViewUserDialog } from "./ViewUserDialog";
+import { Tenant } from "@/types/tenant";
 
-import pdfMake from "pdfmake/build/pdfmake";
-import pdfFonts from "pdfmake/build/vfs_fonts";
-
-(pdfMake as any).vfs = (pdfFonts as any).vfs;
-
-const Users = () => {
+const Tenants = () => {
   const [page, setPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(10);
 
@@ -68,10 +62,10 @@ const Users = () => {
   const [isEditOpen, setIsEditOpen] = useState<boolean>(false);
   const [isViewOpen, setIsViewOpen] = useState<boolean>(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState<boolean>(false);
-  const [userToDelete, setUserToDelete] = useState<User | null>(null);
-  const [userToView, setUserToView] = useState<User | null>(null);
+  const [tenantToDelete, setTenantToDelete] = useState<Tenant | null>(null);
+  const [tenantToView, setTenantToView] = useState<Tenant | null>(null);
 
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [selectedUser, setSelectedUser] = useState<Tenant | null>(null);
 
   const [search, setSearch] = useState<string>("");
   const [searchInput, setSearchInput] = useState<string>("");
@@ -81,23 +75,6 @@ const Users = () => {
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["userData", page, pageSize, search],
-    queryFn: async () => {
-      const token = await getToken();
-      const res = await fetch(
-        `http://localhost:8080/api/users/getAll?search=${search}&page=${page}&pageSize=${pageSize}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          method: "GET",
-        }
-      );
-      return res.json();
-    },
-  });
-
-  const { data: tenantData } = useQuery({
-    queryKey: ["tenantData"],
     queryFn: async () => {
       const token = await getToken();
       const res = await fetch(`http://localhost:8080/api/tenants/getAll`, {
@@ -110,23 +87,21 @@ const Users = () => {
     },
   });
 
+  console.log("check user data", data);
+
   const deleteUser = async (id: string): Promise<void> => {
     const token = await getToken();
-    const response = await fetch(
-      `http://localhost:8080/api/users/delete/${id}`,
-      {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
+    const response = await fetch(`http://localhost:8080/api/tenants/${id}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.message || "Failed to delete user");
     }
-    console.log("check user delete response here", response);
-    toast.success("A user deleted successfully");
+    toast.success("Tenant deleted successfully");
   };
 
   const deleteUserMutation = useMutation({
@@ -137,13 +112,13 @@ const Users = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["userData"] });
       setIsDeleteOpen(false);
-      setUserToDelete(null);
+      setTenantToDelete(null);
       console.log("User deleted successfully");
     },
     onError: (error) => {
       console.error("Error deleting user:", error.message);
       setIsDeleteOpen(false);
-      setUserToDelete(null);
+      setTenantToDelete(null);
     },
   });
 
@@ -151,39 +126,27 @@ const Users = () => {
     setIsAddOpen(true);
   };
 
-  const handleEditUser = (user: User) => {
-    console.log("handleEditUser called with user:", user); // Debug log
+  const handleEditUser = (tenant: Tenant) => {
+    console.log("handleEditUser called with user:", tenant);
 
     // Ensure we have a complete user object with all required fields
-    const completeUser: User = {
-      id: user.id,
-      firstName: user.firstName || "",
-      lastName: user.lastName || "",
-      email: user.email || "",
-      username: user.username || "",
-      role: user.role || "",
-      displayName: user.displayName || "",
-      // phone: user.phone || "",
-      createdAt: user.createdAt || "",
-      // updatedAt: user.updatedAt || "",
-      tenant: user?.tenant || null,
-      tenantId: user.tenantId || null,
-      // Add any other properties that might be missing
+    const completeTenant: Tenant = {
+      id: tenant.id,
+      name: tenant.name || "",
+      description: tenant.description || "",
+      status: tenant.status || "",
+      createdAt: tenant.createdAt || "",
     };
 
-    setSelectedUser(completeUser);
-
-    console.log("check user h2", completeUser);
+    setSelectedUser(completeTenant);
     setIsEditOpen(true);
   };
 
-  console.log("edited user", selectedUser);
-
-  const handleDeleteUser = (user: User) => {
+  const handleDeleteTenant = (tenant: Tenant) => {
     setIsDeleteOpen(true);
 
-    console.log("Deleting user:", user);
-    setUserToDelete(user);
+    console.log("Deleting user:", tenant);
+    setTenantToDelete(tenant);
   };
 
   const handleCloseEdit = () => {
@@ -192,9 +155,9 @@ const Users = () => {
     setSelectedUser(null);
   };
 
-  const handleViewUser = (user: User) => {
+  const handleViewTenant = (tenant: Tenant) => {
     setIsViewOpen(true);
-    setUserToView(user);
+    setTenantToView(tenant);
   };
 
   const handleReset = () => {
@@ -234,79 +197,22 @@ const Users = () => {
   };
 
   const handleUserUpdated = () => {
+    console.log("handleUserUpdated called"); // Debug log
     refetch();
-    handleCloseEdit();
+    handleCloseEdit(); // Close the dialog after successful update
   };
 
   const handleConfirmDelete = () => {
-    if (userToDelete) {
-      deleteUserMutation.mutate(userToDelete.id);
+    if (tenantToDelete) {
+      deleteUserMutation.mutate(tenantToDelete.id);
     }
-  };
-
-  const handleExportPDF = () => {
-    if (!data?.users?.length) {
-      toast.error("No users to export");
-      return;
-    }
-
-    // Build table body
-    const tableBody = [
-      [
-        { text: "Username", bold: true, color: "white" },
-        { text: "Email", bold: true, color: "white" },
-        { text: "Role", bold: true, color: "white" },
-        { text: "Tenant", bold: true, color: "white" },
-      ],
-      ...data.users.map((user: User) => [
-        user.username,
-        user.email,
-        user.role,
-        user?.tenant?.name || "-",
-      ]),
-    ];
-
-    const docDefinition: any = {
-      content: [
-        { text: "User Management Report", style: "header" },
-        { text: `Total Users: ${data?.meta?.total || 0}`, style: "subheader" },
-        { text: "\n" },
-        {
-          table: {
-            headerRows: 1,
-            widths: ["auto", "*", "*", "auto"],
-            body: tableBody,
-          },
-          layout: {
-            fillColor: (rowIndex: number) =>
-              rowIndex === 0 ? "#2563eb" : null, // header color
-          },
-        },
-      ],
-      styles: {
-        header: {
-          fontSize: 18,
-          bold: true,
-          margin: [0, 0, 0, 10],
-        },
-        subheader: {
-          fontSize: 12,
-          italics: true,
-          margin: [0, 0, 0, 10],
-        },
-      },
-      footer: (currentPage: number, pageCount: number) => ({
-        text: `Page ${currentPage} of ${pageCount}`,
-        alignment: "right",
-        margin: [0, 0, 20, 0],
-        fontSize: 9,
-      }),
-    };
-
-    pdfMake.createPdf(docDefinition).download("users-report.pdf");
   };
 
   if (isLoading) return <p>Loading..</p>;
+
+  console.log("check data i1", data);
+
+  const handleExportPDF = () => {};
 
   return (
     <div>
@@ -315,7 +221,6 @@ const Users = () => {
       </div>
 
       {/* Header */}
-
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center space-x-3">
           <div className="p-2 bg-primary/10 rounded-lg">
@@ -323,16 +228,16 @@ const Users = () => {
           </div>
           <div>
             <h1 className="text-2xl font-bold tracking-tight">
-              User Management
+              Tenant Management
             </h1>
             <p className="text-muted-foreground">
-              Manage and monitor all system users
+              Manage and monitor all tenants
             </p>
           </div>
         </div>
         <div className="flex items-center space-x-3">
           <Badge variant="outline" className="text-sm">
-            Total: {data?.meta?.total || 0} users
+            Total: {data?.totalCount || 0} tenants
           </Badge>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -362,7 +267,7 @@ const Users = () => {
           </DropdownMenu>
           <Button onClick={handleAddUser} size="sm">
             <Plus className="h-4 w-4 mr-2" />
-            Add User
+            Add Tenant
           </Button>
         </div>
       </div>
@@ -404,7 +309,7 @@ const Users = () => {
       {/*Users table*/}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Users List</CardTitle>
+          <CardTitle className="text-lg">Tenants List</CardTitle>
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">
               Rows per page:
@@ -435,41 +340,38 @@ const Users = () => {
             page={page}
             pageSize={pageSize}
             onPageChange={(newPage) => setPage(newPage)}
-            onEditUser={handleEditUser}
-            onDeleteUser={handleDeleteUser}
-            onViewUser={handleViewUser}
+            onEditTenant={handleEditUser}
+            onDeleteTenant={handleDeleteTenant}
+            onViewTenant={handleViewTenant}
           />
         </CardContent>
       </Card>
 
       {isAddOpen && (
-        <AddUserDialog
+        <AddTenantDialog
           isOpen={isAddOpen}
-          tenantData={tenantData}
           onClose={() => setIsAddOpen(false)}
-          onUserCreated={() => refetch()}
+          onTenantCreated={() => refetch()}
         />
       )}
 
       {/* Edit User Dialog - Only render when we have a selected user */}
       {selectedUser && isEditOpen && (
-        <EditUserDialog
+        <EditTenantDialog
           key={selectedUser.id}
           isOpen={isEditOpen}
           onClose={handleCloseEdit}
-          tenantData={tenantData}
-          user={selectedUser}
+          tenant={selectedUser}
           onUserUpdated={handleUserUpdated}
         />
       )}
 
-      {userToView && isViewOpen && (
+      {tenantToView && isViewOpen && (
         <ViewUserDialog
-          key={userToView.id}
+          key={tenantToView.id}
           isOpen={isViewOpen}
           onClose={() => setIsViewOpen(false)}
-          user={userToView}
-          tenantData={tenantData}
+          tenant={tenantToView}
         />
       )}
 
@@ -480,7 +382,7 @@ const Users = () => {
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone. This will permanently delete the
-              user account for <strong>{userToDelete?.username}</strong> and
+              user account for <strong>{tenantToDelete?.name}</strong> and
               remove all associated data from our servers.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -488,7 +390,7 @@ const Users = () => {
             <AlertDialogCancel
               onClick={() => {
                 setIsDeleteOpen(false);
-                setUserToDelete(null);
+                setTenantToDelete(null);
               }}
             >
               Cancel
@@ -504,7 +406,7 @@ const Users = () => {
                   Deleting...
                 </>
               ) : (
-                "Delete User"
+                "Delete Tenant"
               )}
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -514,4 +416,4 @@ const Users = () => {
   );
 };
 
-export default Users;
+export default Tenants;

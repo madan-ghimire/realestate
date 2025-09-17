@@ -6,6 +6,12 @@ export enum RoleType {
   INSIGHT_USER = "INSIGHT_USER",
 }
 
+export enum StatusType {
+  Active = "Active",
+  ActiveWithLimitedTime = "Active with limited time",
+  Passive = "Passive",
+}
+
 export const ROLE_OPTIONS = [
   {
     value: RoleType.CLIENT,
@@ -28,6 +34,15 @@ export const ROLE_OPTIONS = [
     label: "Insight User",
   },
 ] as const;
+
+export const TenantStatusOptions = [
+  { value: StatusType.Active, label: "Active" },
+  {
+    value: StatusType.ActiveWithLimitedTime,
+    label: "Active with limited time",
+  },
+  { value: StatusType.Passive, label: "Passive" },
+];
 
 export const getRoleLabel = (value: RoleType): string => {
   return ROLE_OPTIONS.find((option) => option.value === value)?.label || value;

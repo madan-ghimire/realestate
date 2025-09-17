@@ -56,6 +56,15 @@ interface SidebarItem {
 const sidebarItems: SidebarItem[] = [
   { title: "Dashboard", icon: LayoutDashboard, href: "/admin/dashboard" },
   {
+    title: "Saas",
+    icon: Building,
+    href: "/admin/tenants",
+    children: [
+      { title: "Tenants", href: "/admin/tenants" },
+      { title: "Editions", href: "/admin/editions" },
+    ],
+  },
+  {
     title: "Properties",
     icon: Building,
     href: "/dashboard/properties",
@@ -171,7 +180,10 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
     // console.log("check user info", userInfo);
     if (!userInfo) {
       router.replace("/auth/signin");
-    } else if (userInfo.role !== "ADMINISTRATOR") {
+    } else if (
+      userInfo.role !== "ADMINISTRATOR" &&
+      userInfo.role !== "SUPER_ADMIN"
+    ) {
       router.replace("/unauthorized"); // Or show error message
     } else {
       setUser(userInfo);

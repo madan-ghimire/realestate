@@ -11,7 +11,7 @@ export const getTenants = async (req: Request, res: Response) => {
   try {
     const { tenants, count } = await getAllTenants();
     res.status(200).json({
-      data: tenants,
+      tenants,
       totalCount: count,
     });
   } catch (error) {

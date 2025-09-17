@@ -83,6 +83,9 @@ export const getAllUsers = async ({
       skip,
       take: pageSize,
       orderBy: { createdAt: "desc" }, // sort by createdAt
+      include: {
+        tenant: true,
+      },
     }),
     db.user.count({ where }),
   ]);

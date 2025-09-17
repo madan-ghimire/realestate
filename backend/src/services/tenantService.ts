@@ -9,8 +9,8 @@ export const createTenant = async (tenantData: TenantDto) => {
 
 export const getAllTenants = async () => {
   const [tenants, count] = await Promise.all([
-    db.tenant.findMany(),
-    db.tenant.count,
+    db.tenant.findMany({ orderBy: { createdAt: "desc" } }),
+    db.tenant.count(),
   ]);
   return {
     tenants,

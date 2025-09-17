@@ -7,12 +7,26 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ====================
+// Enums
+// ====================
+
 enum RoleType {
+  SUPER_ADMIN
   ADMINISTRATOR
   AGENT
   CLIENT
   PROPERTY_OWNER
   INSIGHT_USER
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  BANNED
+  INVITED
+  LOCKED
+  UNLOCK_SENT
 }
 
 enum PropertyType {
@@ -30,27 +44,75 @@ enum PropertyStatus {
   RENTED
 }
 
-model Tenant {
-  id          String     @id @default(uuid())
-  name        String     @unique
-  description String?
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  users       User[]
-  properties  Property[]
-  listings    Listing[]
-  bookings    Booking[]
-  payments    Payment[]
-  documents   Document[]
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
 }
 
-enum UserStatus {
+enum PaymentMethod {
+  CREDIT_CARD
+  BANK_TRANSFER
+  CASH
+  PAYPAL
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+enum DocumentType {
+  DEED
+  CONTRACT
+  INSPECTION_REPORT
+  TAX
+  OTHER
+}
+
+enum SubscriptionStatus {
   ACTIVE
-  INACTIVE
-  BANNED
-  INVITED
-  LOCKED
-  UNLOCK_SENT
+  TRIALING
+  PAST_DUE
+  CANCELED
+  EXPIRED
+}
+
+enum NotificationType {
+  EMAIL
+  SMS
+  PUSH
+  IN_APP
+}
+
+// ====================
+// Core Multi-Tenant Models
+// ====================
+
+model Tenant {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  status      String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  users         User[]
+  properties    Property[]
+  listings      Listing[]
+  bookings      Booking[]
+  payments      Payment[]
+  documents     Document[]
+  subscriptions Subscription[]
+  auditLogs     AuditLog[]
+  notifications Notification[]
+  leads         Lead[]
+  favorites     Favorite[]
+  savedSearches SavedSearch[]
+  userRoles     UserRole[]
 }
 
 model User {
@@ -73,17 +135,36 @@ model User {
   loginAttempts Int        @default(0)
   lock          Boolean    @default(false)
   twoFA         Boolean    @default(false)
-  tenantId      String?
-  tenant        Tenant?    @relation(fields: [tenantId], references: [id])
+
+  tenantId String?
+  tenant   Tenant? @relation(fields: [tenantId], references: [id])
 
   token          String?   @db.VarChar(255)
   tokenCreatedAt DateTime?
 
-  ownedProperties   Property[] @relation("OwnerProperties")
-  agentListings     Listing[]  @relation("AgentListings")
-  clientBookings    Booking[]  @relation("ClientBookings")
+  ownedProperties   Property[]     @relation("OwnerProperties")
+  agentListings     Listing[]      @relation("AgentListings")
+  clientBookings    Booking[]      @relation("ClientBookings")
   uploadedDocuments Document[]
   payments          Payment[]
+  roles             UserRole[]
+  auditLogs         AuditLog[]
+  notifications     Notification[]
+  leads             Lead[]
+  favorites         Favorite[]
+  savedSearches     SavedSearch[]
+}
+
+// Many-to-Many User <-> Role (per tenant)
+model UserRole {
+  id       String   @id @default(uuid())
+  role     RoleType
+  userId   String
+  user     User     @relation(fields: [userId], references: [id])
+  tenantId String
+  tenant   Tenant   @relation(fields: [tenantId], references: [id])
+
+  @@unique([userId, role, tenantId])
 }
 
 // ====================
@@ -130,6 +211,7 @@ model Property {
 
   listings  Listing[]
   documents Document[]
+  favorites Favorite[]
 }
 
 // ====================
@@ -174,13 +256,6 @@ model Booking {
   tenant   Tenant? @relation(fields: [tenantId], references: [id])
 }
 
-enum BookingStatus {
-  PENDING
-  CONFIRMED
-  CANCELLED
-  COMPLETED
-}
-
 // ====================
 // Payments
 // ====================
@@ -199,19 +274,6 @@ model Payment {
 
   tenantId String?
   tenant   Tenant? @relation(fields: [tenantId], references: [id])
-}
-
-enum PaymentMethod {
-  CREDIT_CARD
-  BANK_TRANSFER
-  CASH
-  PAYPAL
-}
-
-enum PaymentStatus {
-  PENDING
-  SUCCESS
-  FAILED
 }
 
 // ====================
@@ -237,10 +299,104 @@ model Document {
   tenant   Tenant? @relation(fields: [tenantId], references: [id])
 }
 
-enum DocumentType {
-  DEED
-  CONTRACT
-  INSPECTION_REPORT
-  TAX
-  OTHER
+// Subscription Plans
+model SubscriptionPlan {
+  id        String   @id @default(uuid())
+  name      String
+  price     Float
+  currency  String   @default("USD")
+  features  String[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  subscriptions Subscription[]
+}
+
+model Subscription {
+  id         String             @id @default(uuid())
+  status     SubscriptionStatus @default(TRIALING)
+  startDate  DateTime           @default(now())
+  endDate    DateTime?
+  canceledAt DateTime?
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+
+  planId String
+  plan   SubscriptionPlan @relation(fields: [planId], references: [id])
+}
+
+// Audit Logs
+model AuditLog {
+  id        String   @id @default(uuid())
+  action    String
+  entity    String
+  entityId  String
+  details   Json?
+  createdAt DateTime @default(now())
+
+  userId   String?
+  user     User?   @relation(fields: [userId], references: [id])
+  tenantId String?
+  tenant   Tenant? @relation(fields: [tenantId], references: [id])
+}
+
+// Notifications
+model Notification {
+  id        String           @id @default(uuid())
+  type      NotificationType
+  message   String
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  userId   String
+  user     User    @relation(fields: [userId], references: [id])
+  tenantId String?
+  tenant   Tenant? @relation(fields: [tenantId], references: [id])
+}
+
+// Saved Searches
+model SavedSearch {
+  id        String   @id @default(uuid())
+  name      String
+  filters   Json
+  createdAt DateTime @default(now())
+
+  userId   String
+  user     User    @relation(fields: [userId], references: [id])
+  tenantId String?
+  tenant   Tenant? @relation(fields: [tenantId], references: [id])
+}
+
+// Leads (for agents/owners)
+model Lead {
+  id        String   @id @default(uuid())
+  name      String
+  email     String?
+  phone     String?
+  notes     String?
+  createdAt DateTime @default(now())
+
+  assignedToId String?
+  assignedTo   User?   @relation(fields: [assignedToId], references: [id])
+  tenantId     String?
+  tenant       Tenant? @relation(fields: [tenantId], references: [id])
+}
+
+// Favorites (users save properties)
+
+model Favorite {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id])
+
+  tenantId String?
+  tenant   Tenant? @relation(fields: [tenantId], references: [id])
+
+  @@unique([userId, propertyId])
 }

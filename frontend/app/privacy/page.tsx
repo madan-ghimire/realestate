@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 export default function PrivacyPolicyPage() {
   const router = useRouter();
@@ -41,12 +42,12 @@ export default function PrivacyPolicyPage() {
             </li>
             <li>
               For more information, please refer to our full{" "}
-              <a
+              <Link
                 href="/terms"
                 className="font-extrabold text-blue-600 underline hover:text-blue-700"
               >
                 Terms of Service
-              </a>
+              </Link>
               .
             </li>
           </ul>
