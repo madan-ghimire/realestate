@@ -1,3 +1,5 @@
+/* This TypeScript code defines a class `SendGridEmailService` that handles sending emails using the
+SendGrid service. Here is a breakdown of what the code is doing: */
 import sgMail from "@sendgrid/mail";
 import { DotenvConfig } from "../../config/env.config";
 import HttpException from "../../utils/HttpException.utils";
@@ -25,7 +27,7 @@ export class SendGridEmailService {
 
   constructor() {
     // sgMail.setApiKey(DotenvConfig.SEND_GRID_API_KEY);
-    sgMail.setApiKey(process.env.SEND_GRID_API_KEY || "");
+    sgMail.setApiKey(DotenvConfig.SEND_GRID_API_KEY);
 
     this.from = {
       name: "Realestate",
@@ -55,7 +57,7 @@ export class SendGridEmailService {
       const res = await sgMail.send(msg);
       return res;
     } catch (error: any) {
-      console.log(error?.response?.body?.errors);
+      console.log("check error here", error);
 
       throw HttpException.internalServerError("Error from email service");
     }

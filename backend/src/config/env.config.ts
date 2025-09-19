@@ -26,10 +26,10 @@ export class DotenvConfig {
   static SMTP_MAIL = process.env.SMTP_MAIL!;
   static SMTP_APP_PASS = process.env.SMTP_APP_PASS!;
 
-  static SEND_GRID_API_KEY = process.env.SEND_GRID_API_KEY || "";
+  static SEND_GRID_API_KEY = process.env.SEND_GRID_API_KEY!;
 
   //   //BACKEND URL
   //   static BACKEND_URL = process.env.BACKEND_URL!;
   //   // FRONTEND URL
-  static FRONTEND_URL = process.env.FRONTEND_URL || "";
+  static FRONTEND_URL = process.env.FRONTEND_URL!;
 }

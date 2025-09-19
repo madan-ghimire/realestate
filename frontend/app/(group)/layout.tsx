@@ -67,11 +67,11 @@ const sidebarItems: SidebarItem[] = [
   {
     title: "Properties",
     icon: Building,
-    href: "/dashboard/properties",
+    href: "/admin/properties",
     badge: "12",
     children: [
       { title: "All Properties", href: "/dashboard/properties" },
-      { title: "Add Property", href: "/dashboard/properties/add" },
+      { title: "Add Property", href: "/admin/properties" },
       { title: "Property Types", href: "/dashboard/properties/types" },
       { title: "Property Locations", href: "/dashboard/properties/locations" },
     ],
