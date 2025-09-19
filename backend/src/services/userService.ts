@@ -113,6 +113,8 @@ export const createUser = async (data: RegisterDto) => {
       throw HttpException.badRequest("Email already in use.");
     }
 
+    console.log("check data user create here", data);
+
     const user = await db.user.create({
       data: {
         email: data.email,

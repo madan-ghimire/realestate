@@ -35,7 +35,9 @@ export const getTenant = async (req: Request, res: Response) => {
 export const createTenantHandler = async (req: Request, res: Response) => {
   try {
     const tenant = await createTenant(req.body);
-    res.status(201).json(tenant);
+    res
+      .status(201)
+      .json({ success: true, message: "User created successfully", tenant });
   } catch (error) {
     res.status(500).json({ message: "Error creating tenant" });
   }

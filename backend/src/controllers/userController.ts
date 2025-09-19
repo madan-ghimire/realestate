@@ -25,7 +25,7 @@ export const getUsers = async (req: Request, res: Response) => {
 
 export const createUserHandler = async (req: Request, res: Response) => {
   try {
-    console.log("check user create data here", req.body);
+    // console.log("check user create data here", req.body);
     const user = await createUser(req.body);
 
     res
