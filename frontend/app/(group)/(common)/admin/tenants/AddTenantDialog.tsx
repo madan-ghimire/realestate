@@ -77,8 +77,6 @@ export const AddTenantDialog: React.FC<AddTenantDialogProps> = ({
         body: JSON.stringify(data),
       });
 
-      console.log("check response here i22", response);
-
       if (response.success) {
         toast.success("Tenant created successfully");
       }

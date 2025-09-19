@@ -435,7 +435,7 @@ import { Button } from "@/components/ui/button";
 
 import {
   // MoreHorizontal,
-  Eye,
+  // Eye,
   Edit,
   // Mail,
   // UserCheck,
@@ -451,8 +451,8 @@ export function TableComponent({
   onPageChange,
   onEditUser,
   onDeleteUser,
-  onViewUser,
-}: {
+}: // onViewUser,
+{
   data: any;
   page: number;
   pageSize: number;
@@ -475,10 +475,10 @@ export function TableComponent({
   };
 
   // 👉 placeholder handlers (you can wire real logic later)
-  const handleView = (user: User) => {
-    console.log("View", user);
-    onViewUser(user);
-  };
+  // const handleView = (user: User) => {
+  //   console.log("View", user);
+  //   onViewUser(user);
+  // };
 
   const handleEdit = (user: any) => {
     console.log("Edit button clicked for user:", user); // Debug log
@@ -647,7 +647,7 @@ export function TableComponent({
                     </Button>
 
                     {/* (Optional) View Details */}
-                    <Button
+                    {/* <Button
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8"
@@ -655,7 +655,7 @@ export function TableComponent({
                       title="View"
                     >
                       <Eye className="h-4 w-4 text-gray-600" />
-                    </Button>
+                    </Button> */}
                   </div>
                 </TableCell>
               </TableRow>
